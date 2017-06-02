@@ -1,0 +1,12 @@
+{
+  "dependencies": {},
+  "name": "css-selector-evaluator",
+  "version": "0.1.0",
+  "description": "Evaluates an object tree against a css selector.",
+  "main": "index.js",
+  "author": "Lochlan Bunn <bunn@lochlan.io>",
+  "license": "MIT",
+  "devDependencies": {
+    "debug": "^2.6.8"
+  }
+}
