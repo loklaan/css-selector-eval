@@ -1,4 +1,9 @@
-const { ELEMENT, COMBINATOR, CHILD_COMBINATOR, DESC_COMBINATOR } = require('./contants')
+const {
+  ELEMENT_TOKEN,
+  COMBINATOR_TOKEN,
+  CHILD_COMBINATOR_VALUE,
+  DESC_COMBINATOR_VALUE
+} = require('./contants')
 
 const RGX_WHITESPACE = /\s/
 const RGX_WORD = /\w/
@@ -13,39 +18,38 @@ function tokenizer (input) {
     // Note: order checks by compute expense
 
     if (char === '>') {
-      tokens.push({type: COMBINATOR, value: CHILD_COMBINATOR})
+      tokens.push({ type: COMBINATOR_TOKEN, value: CHILD_COMBINATOR_VALUE })
       cursor++
-      continue;
+      continue
     }
 
     if (RGX_WHITESPACE.test(char)) {
       cursor++
-      continue;
+      continue
     }
 
     if (RGX_WORD.test(char)) {
       value = ''
       while (char && RGX_WORD.test(char)) {
-        value += char;
-        char = input[++cursor];
+        value += char
+        char = input[++cursor]
       }
-      tokens.push({type: ELEMENT, value: value})
-      continue;
+      tokens.push({ type: ELEMENT_TOKEN, value: value })
+      continue
     }
 
     console.error('Should not have reached')
     cursor++
-    continue;
   }
 
   tokens = tokens.reduce((accum, token, i) => {
     accum.push(token)
     if (
-      token.type === ELEMENT &&
-      tokens[i+1] &&
-      tokens[i+1].type === ELEMENT
+      token.type === ELEMENT_TOKEN &&
+      tokens[i + 1] &&
+      tokens[i + 1].type === ELEMENT_TOKEN
     ) {
-      accum.push({type: COMBINATOR, value: DESC_COMBINATOR})
+      accum.push({ type: COMBINATOR_TOKEN, value: DESC_COMBINATOR_VALUE })
     }
     return accum
   }, [])
@@ -53,4 +57,4 @@ function tokenizer (input) {
   return tokens
 }
 
-module.exports = tokenizer;
+module.exports = tokenizer

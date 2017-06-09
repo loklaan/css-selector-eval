@@ -1,12 +1,15 @@
 const {
-  ELEMENT,
-  COMBINATOR,
+  CHILD_COMBINATOR_VALUE,
+  DESC_COMBINATOR_VALUE,
+  ELEMENT_TOKEN,
+  COMBINATOR_TOKEN,
   SELECTOR_SEQUENCE,
-  SELECTOR_EXPRESSION,
+  SELECTOR_EXPRESSION_ROOT,
+  SELECTOR_EXPRESSION_CHILD,
+  SELECTOR_EXPRESSION_DESCENDANT,
   ELEMENT_LITERAL,
   COMBINATOR_LITERAL
 } = require('./contants')
-const { debug } = require('./utils')
 
 function createSelectorSequence (selectors) {
   return {
@@ -16,9 +19,22 @@ function createSelectorSequence (selectors) {
 }
 
 function createSelectorExpression (origin, combinator, target) {
+  let type
+  if (!origin && !combinator && target) {
+    type = SELECTOR_EXPRESSION_ROOT
+  } else if (combinator.value === CHILD_COMBINATOR_VALUE) {
+    type = SELECTOR_EXPRESSION_CHILD
+  } else if (combinator.value === DESC_COMBINATOR_VALUE) {
+    type = SELECTOR_EXPRESSION_DESCENDANT
+  } else {
+    throw new Error('Could not parse the selector expression.')
+  }
+
   return {
-    type: SELECTOR_EXPRESSION,
-    origin, combinator, target
+    type: type,
+    origin,
+    combinator,
+    target
   }
 }
 
@@ -52,29 +68,26 @@ function parser (tokens) {
   let initial = 0
   let cursor = initial
 
-  if (tokens[initial].type !== ELEMENT) {
+  if (tokens[initial].type !== ELEMENT_TOKEN) {
     throw new Error(
-      'Invalid token - expected selector sequence to start with an element. Instead was given:', tokens[cursor]
+      'Invalid token - expected selector sequence to start with an element. Instead was given:',
+      tokens[cursor]
     )
   }
   const ast = createSelectorSequence([
     createSelectorExpression(undefined, undefined, tokens[initial])
-  ]);
-  debug(`initial ast\n${JSON.stringify(ast, null, 2)}`)
+  ])
 
   function walk () {
-    let origin = tokens[cursor];
-    let combinator = tokens[cursor + POS_NEXT_COMBINATOR];
-    let target = tokens[cursor + POS_NEXT_ELEM];
-
-    debug('origin', origin)
-    debug('combinator', combinator)
-    debug('target', target)
+    let origin = tokens[cursor]
+    let combinator = tokens[cursor + POS_NEXT_COMBINATOR]
+    let target = tokens[cursor + POS_NEXT_ELEM]
 
     if (
-      (origin && origin.type === ELEMENT) &&
-      (combinator && combinator.type === COMBINATOR) &&
-      (target && target.type === ELEMENT)
+      origin &&
+      origin.type === ELEMENT_TOKEN &&
+      (combinator && combinator.type === COMBINATOR_TOKEN) &&
+      (target && target.type === ELEMENT_TOKEN)
     ) {
       cursor += tokens.length === cursor + POS_AFTER_NEXT_ELEM
         ? POS_AFTER_NEXT_ELEM
@@ -92,14 +105,10 @@ function parser (tokens) {
   }
 
   while (cursor < tokens.length) {
-    debug('begin walk. cursor:', cursor)
     ast.selectors.push(walk())
-    debug('end walk. cursor:', cursor)
   }
 
-  debug(`final ast\n${JSON.stringify(ast, null, 2)}`)
-
-  return ast;
+  return ast
 }
 
 module.exports = parser

@@ -1,19 +1,26 @@
-const CHILD_COMB = 'child'
-const DESC_COMB = 'desc'
-const ELEMENT = 'element'
-const COMBINATOR = 'combinator'
+// Token Types
+const CHILD_COMBINATOR_VALUE = 'child'
+const DESC_COMBINATOR_VALUE = 'desc'
+const ELEMENT_TOKEN = 'element'
+const COMBINATOR_TOKEN = 'combinator'
+
+// AST Types
 const SELECTOR_SEQUENCE = 'SelectorSequence'
-const SELECTOR_EXPRESSION = 'SelectorExpression'
+const SELECTOR_EXPRESSION_ROOT = 'SelectorExpressionRoot'
+const SELECTOR_EXPRESSION_CHILD = 'SelectorExpressionChild'
+const SELECTOR_EXPRESSION_DESCENDANT = 'SelectorExpressionDescendant'
 const ELEMENT_LITERAL = 'ElementLiteral'
 const COMBINATOR_LITERAL = 'CombinatorLiteral'
 
 module.exports = {
-  CHILD_COMBINATOR: CHILD_COMB,
-  DESC_COMBINATOR: DESC_COMB,
-  ELEMENT,
-  COMBINATOR,
+  CHILD_COMBINATOR_VALUE,
+  DESC_COMBINATOR_VALUE,
+  ELEMENT_TOKEN,
+  COMBINATOR_TOKEN,
   SELECTOR_SEQUENCE,
-  SELECTOR_EXPRESSION,
+  SELECTOR_EXPRESSION_ROOT,
+  SELECTOR_EXPRESSION_CHILD,
+  SELECTOR_EXPRESSION_DESCENDANT,
   ELEMENT_LITERAL,
   COMBINATOR_LITERAL
 }

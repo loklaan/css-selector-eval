@@ -1,126 +1,58 @@
 const {
-  CHILD_COMBINATOR,
-  DESC_COMBINATOR
+  SELECTOR_EXPRESSION_ROOT,
+  SELECTOR_EXPRESSION_CHILD,
+  SELECTOR_EXPRESSION_DESCENDANT
 } = require('./contants')
+const {
+  RootExpressionNode,
+  ChildExpressNode,
+  DescendantExpressionNode
+} = require('./node-types')
 const { debug } = require('./utils')
 const tokenizer = require('./tokenizer')
 const parser = require('./parser')
 
-function traverse (selectors, tree) {
+const defaultOptions = {
+  getName: (node, nodeKey) => node.name,
+  getChildren: (node, nodeKey) => node.children
+}
+
+function traverse (selectors, tree, treeKey, options) {
   const selector = selectors[0]
+  debug(`\n=======================\ntraversing next tree...`)
   debug(`next selector\n${JSON.stringify(selector, null, 2)}`)
   debug(`next tree\n${JSON.stringify(tree, null, 2)}`)
-  if (!selector || !tree.children) return {fucker: 1}
+  debug(`evaluating expression type`)
 
-  const name = selector.target.value;
-  const combinator = selector.combinator && selector.combinator.value
-  switch (combinator) {
-    case DESC_COMBINATOR:
-      debug('HIT DESC_COMBINATOR')
-      function traverseToChild(exitNode, child) {
-        debug('traversing next level of child, for DESC_COMBINATOR targeting', name)
-        if (exitNode) return exitNode
-        if (child.name === name) {
-          if (child.children) {
-            const nextSelectors = selectors.slice(1);
-            if (nextSelectors) {
-              debug('descendant match found - traversing deeper with next selectors')
-              const exitTree = traverse(nextSelectors, child)
-              if (exitTree) {
-                return { name: selector.target.value, child: exitTree }
-              } else {
-                return false
-              }
-            } else {
-              return { name, node: child }
-            }
-          } else {
-            return { name }
-          }
-        } else if (child.children) {
-          debug('traversing more descendants...')
-          const exitTree = child.children.reduce(traverseToChild, exitNode)
-          if (exitTree) {
-            return { name: child.name, child: exitTree }
-          } else {
-            return false
-          }
-        } else {
-          debug('bailing on descendant tree...')
-          return false
-        }
-      }
-
-      return tree.children.reduce(traverseToChild, false)
-    case undefined:
-    case CHILD_COMBINATOR:
-      combinator === undefined && debug('HIT SELECTOR ROOT')
-      combinator === CHILD_COMBINATOR && debug('HIT CHILD_COMBINATOR')
-      return tree.children.reduce((exitNode, child) => {
-        debug('hit child, child:', child)
-        if (exitNode) return exitNode
-        if (child.name === name) {
-          if (child.children) {
-            const nextSelectors = selectors.slice(1);
-            if (nextSelectors) {
-              debug('traversing deeper...')
-              const exitTree = traverse(nextSelectors, child)
-              if (exitTree) {
-                return { name: selector.target.value, child: exitTree }
-              } else {
-                return false
-              }
-            } else {
-              return { name, node: child }
-            }
-          } else {
-            return { name }
-          }
-        }
-        debug('bailing on child...')
-        return false
-      }, false)
+  const expressionType = selector.type
+  switch (expressionType) {
+    case SELECTOR_EXPRESSION_DESCENDANT:
+      debug("hit 'DESCENDANT COMBINATOR' expression in selector sequence")
+      return DescendantExpressionNode(
+        traverse,
+        selectors,
+        tree,
+        treeKey,
+        options
+      )
+    case SELECTOR_EXPRESSION_CHILD:
+      debug("hit 'CHILD COMBINATOR' expression in selector sequence")
+      return ChildExpressNode(traverse, selectors, tree, treeKey, options)
+    case SELECTOR_EXPRESSION_ROOT:
+      debug("hit 'SELECTOR ROOT' expression in selector sequence")
+      return RootExpressionNode(traverse, selectors, tree, treeKey, options)
     default:
+      throw new Error('Could not match expression type to a node type.')
   }
 }
 
-const model = {
-  children: [
-    {
-      name: 'Foo',
-      children: [
-        {
-          name: 'Nope',
-          children: [
-            {
-              name: 'Baz',
-              children: [
-                {
-                  name: 'Bar',
-                  children: [
-                    {
-                      name: 'Nope2',
-                      children: [
-                        {
-                          name: 'Quo'
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    }
-  ]
+function evaluate (selector, tree, options) {
+  options = Object.assign({}, defaultOptions, options || {})
+  debug(`selector syntax: '${selector}'\n`)
+  const ast = parser(tokenizer(selector))
+  debug(`selector ast:\n${JSON.stringify(ast, null, 2)}\n`)
+  debug(`object tree:\n${JSON.stringify(tree, null, 2)}\n`)
+  return traverse(ast.selectors, tree, null, options)
 }
 
-function evaluate (selector, tree) {
-  debug('evaluate:', selector)
-  const { selectors } = parser(tokenizer(selector));
-  console.log('\n'+JSON.stringify(traverse(selectors, tree), null, 2))
-}
-
-evaluate('Foo Baz > Bar Quo', model)
+module.exports = evaluate
